@@ -1,0 +1,72 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: porter-backend
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:porter_db}?serverTimezone=UTC?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:yaman123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate      # schema is owned by Flyway migrations, not Hibernate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+app:
+  cors:
+    allowed-origin: http://localhost:5173
+  jwt:
+    secret: ${JWT_SECRET:RzkTv8DqsNc676WwDFs8j08lQDLd6KaxENiRaPSrPaB}
+    access-token-expiry-ms: 90000000        # 15 minutes
+    refresh-token-expiry-ms: 604800000    # 7 days
+  matching:
+    search-radius-km: 300
+    max-radius-km: 800
+    candidates-per-round: 5
+    accept-timeout-seconds: 15
+    broadcast-timeout-seconds: 6000   # how long a request stays SEARCHING_RIDER before auto-expiring to NO_RIDER_FOUND
+  rider:
+    heartbeat-ttl-seconds: 30
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+logging:
+  level:
+    root: INFO
+    com.porterclone: DEBUG
+
+    # Request/response processing
+    org.springframework.web: DEBUG
+    # Database/Hibernate
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
