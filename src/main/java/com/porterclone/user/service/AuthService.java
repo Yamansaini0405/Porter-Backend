@@ -11,6 +11,7 @@ import com.porterclone.user.dto.AuthResponse;
 import com.porterclone.user.dto.CustomerSummaryResponse;
 import com.porterclone.user.dto.RegisterRequest;
 import com.porterclone.user.dto.RiderSummaryResponse;
+import com.porterclone.user.dto.SetPasswordRequest;
 import com.porterclone.user.dto.UserSummaryResponse;
 import com.porterclone.user.entity.AccountStatus;
 import com.porterclone.user.entity.RefreshToken;
@@ -18,6 +19,7 @@ import com.porterclone.user.entity.Role;
 import com.porterclone.user.entity.User;
 import com.porterclone.user.repository.RefreshTokenRepository;
 import com.porterclone.user.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,22 +36,25 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final OtpService otpService;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
     private final SecureRandom random = new SecureRandom();
 
     private static final long REFRESH_TOKEN_EXPIRY_DAYS = 7;
 
     public AuthService(UserRepository userRepository,
-                        CustomerRepository customerRepository,
-                        RiderRepository riderRepository,
-                        RefreshTokenRepository refreshTokenRepository,
-                        OtpService otpService,
-                        JwtService jwtService) {
+                       CustomerRepository customerRepository,
+                       RiderRepository riderRepository,
+                       RefreshTokenRepository refreshTokenRepository,
+                       OtpService otpService,
+                       JwtService jwtService,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
         this.riderRepository = riderRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.otpService = otpService;
         this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -66,6 +71,9 @@ public class AuthService {
         user.setEmail(request.email());
         user.setRole(request.role());
         user.setAccountStatus(AccountStatus.ACTIVE);
+        if (request.password() != null && !request.password().isBlank()) {
+            user.setPasswordHash(passwordEncoder.encode(request.password()));
+        }
         user = userRepository.save(user);
 
         if (request.role() == Role.CUSTOMER) {
@@ -111,6 +119,46 @@ public class AuthService {
     }
 
     @Transactional
+    public AuthResponse loginWithPassword(String phone, String password) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> ApiException.notFound("USER_NOT_FOUND", "No account found with this phone number"));
+
+        if (user.getPasswordHash() == null) {
+            throw ApiException.badRequest("PASSWORD_NOT_SET", "This account has no password set. Please log in with OTP instead.");
+        }
+
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw ApiException.badRequest("INVALID_CREDENTIALS", "Incorrect phone number or password");
+        }
+
+        if (user.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw ApiException.forbidden("ACCOUNT_NOT_ACTIVE", "Your account is " + user.getAccountStatus());
+        }
+
+        return issueTokens(user);
+    }
+
+    /**
+     * Sets or changes the password for the authenticated user.
+     * If the user has no password yet (OTP-only account), currentPassword is not required.
+     * If the user already has a password, currentPassword must match before it can be changed.
+     */
+    @Transactional
+    public void setPassword(Long userId, SetPasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> ApiException.notFound("USER_NOT_FOUND", "User no longer exists"));
+
+        if (user.getPasswordHash() != null) {
+            if (request.currentPassword() == null || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+                throw ApiException.badRequest("INVALID_CURRENT_PASSWORD", "Current password is incorrect");
+            }
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
+    @Transactional
     public AuthResponse refreshAccessToken(String refreshTokenPlain) {
         String hash = sha256(refreshTokenPlain);
 
@@ -151,7 +199,8 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole().name(),
                 user.getAccountStatus(),
-                user.isPhoneVerified()
+                user.isPhoneVerified(),
+                user.getPasswordHash() != null
         );
 
         CustomerSummaryResponse customerSummary = null;

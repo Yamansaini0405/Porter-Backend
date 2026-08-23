@@ -8,6 +8,6 @@ public record UserSummaryResponse(
         String email,
         String role,
         AccountStatus accountStatus,
-        boolean phoneVerified
+        boolean phoneVerified,
+        boolean hasPassword
 ) {}
-

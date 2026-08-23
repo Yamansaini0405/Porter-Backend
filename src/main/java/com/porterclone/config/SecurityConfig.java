@@ -37,23 +37,25 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(
-                    "/api/v1/auth/**",
-                    "/api/v1/vehicle-types",
-                    "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html",
-                    "/actuator/health", "/ws/**"
-                ).permitAll()
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/riders/**").hasAnyRole("RIDER", "ADMIN")
-                .requestMatchers("/api/v1/customers/**").hasAnyRole("CUSTOMER", "ADMIN")
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Must be authenticated even though it lives under /api/v1/auth/**
+                        .requestMatchers("/api/v1/auth/password/set").authenticated()
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/api/v1/vehicle-types",
+                                "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html",
+                                "/actuator/health", "/ws/**"
+                        ).permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/riders/**").hasAnyRole("RIDER", "ADMIN")
+                        .requestMatchers("/api/v1/customers/**").hasAnyRole("CUSTOMER", "ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
