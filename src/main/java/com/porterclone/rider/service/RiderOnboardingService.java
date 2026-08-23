@@ -52,6 +52,10 @@ public class RiderOnboardingService {
         this.historyRepository = historyRepository;
     }
 
+    public List<Rider> getAllRiders() {
+        return riderRepository.findAll();
+    }
+
     /** Rider uploads a KYC document. Moves REGISTERED -> DOCUMENT_SUBMITTED on first upload. */
     @Transactional
     public RiderDocument submitDocument(Long riderId, DocumentType type, String fileUrl) {

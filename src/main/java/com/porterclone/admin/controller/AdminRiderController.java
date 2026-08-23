@@ -7,6 +7,8 @@ import com.porterclone.security.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /** Admin panel: rider KYC review queue. Restricted to ROLE_ADMIN via SecurityConfig. */
 @RestController
 @RequestMapping("/api/v1/admin/riders")
@@ -38,5 +40,10 @@ public class AdminRiderController {
     @PostMapping("/{riderId}/reinstate")
     public ApiResponse<Rider> reinstate(@PathVariable Long riderId, @AuthenticationPrincipal UserPrincipal admin) {
         return ApiResponse.ok(onboardingService.reinstate(riderId, admin.userId()));
+    }
+
+    @PostMapping("/rider/all")
+    public ApiResponse<List<Rider>> getAllRiders(@AuthenticationPrincipal UserPrincipal admin) {
+        return ApiResponse.ok(onboardingService.getAllRiders());
     }
 }
