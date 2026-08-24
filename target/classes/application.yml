@@ -6,7 +6,7 @@ spring:
     name: porter-backend
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:porter_db}?serverTimezone=UTC?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:porter_db}?serverTimezone=UTC&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:yaman123}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -44,7 +44,7 @@ app:
     max-radius-km: 800
     candidates-per-round: 5
     accept-timeout-seconds: 15
-    broadcast-timeout-seconds: 6000   # how long a request stays SEARCHING_RIDER before auto-expiring to NO_RIDER_FOUND
+    broadcast-timeout-seconds: 180   # how long a request stays SEARCHING_RIDER before auto-expiring to NO_RIDER_FOUND
   rider:
     heartbeat-ttl-seconds: 30
 
