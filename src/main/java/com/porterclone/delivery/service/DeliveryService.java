@@ -27,6 +27,8 @@ import com.porterclone.vehicle.entity.Vehicle;
 import com.porterclone.vehicle.entity.VehicleType;
 import com.porterclone.vehicle.repository.VehicleRepository;
 import com.porterclone.vehicle.repository.VehicleTypeRepository;
+import com.porterclone.zone.entity.Zone;
+import com.porterclone.zone.service.ZoneService;
 import com.porterclone.websocket.RequestBroadcastService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -75,6 +77,7 @@ public class DeliveryService {
     private final RiderLocationService riderLocationService;
     private final RiderAvailabilityService riderAvailabilityService;
     private final RequestBroadcastService requestBroadcastService;
+    private final ZoneService zoneService;
     private final double maxRadiusKm;
     private final SecureRandom random = new SecureRandom();
 
@@ -90,6 +93,7 @@ public class DeliveryService {
                            RiderLocationService riderLocationService,
                            RiderAvailabilityService riderAvailabilityService,
                            RequestBroadcastService requestBroadcastService,
+                           ZoneService zoneService,
                            @Value("${app.matching.max-radius-km}") double maxRadiusKm) {
         this.deliveryRequestRepository = deliveryRequestRepository;
         this.historyRepository = historyRepository;
@@ -103,6 +107,7 @@ public class DeliveryService {
         this.riderLocationService = riderLocationService;
         this.riderAvailabilityService = riderAvailabilityService;
         this.requestBroadcastService = requestBroadcastService;
+        this.zoneService = zoneService;
         this.maxRadiusKm = maxRadiusKm;
     }
 
@@ -133,6 +138,12 @@ public class DeliveryService {
                 .toList();
     }
 
+    public DeliveryRequest getDeliveryDetailsById(Long deliveryId) {
+        return deliveryRequestRepository.findById(deliveryId)
+                .orElseThrow(() -> ApiException.notFound("DELIVERY_NOT_FOUND", "Delivery request not found: " + deliveryId));
+    }
+
+
     /** Step 2: customer has now picked one vehicle type — same distance/duration, single fare. */
     public FareEstimateResponse estimateFare(CreateDeliveryRequest req) {
         VehicleType vehicleType = getVehicleType(req.vehicleTypeId());
@@ -157,15 +168,27 @@ public class DeliveryService {
     @Transactional
     public DeliveryRequest createRequest(Long customerId, CreateDeliveryRequest req) {
         VehicleType vehicleType = getVehicleType(req.vehicleTypeId());
+
+        Zone pickupZone = zoneService.resolveServiceableZone(req.pickupLat(), req.pickupLng())
+                .orElseThrow(() -> ApiException.badRequest(
+                        "PICKUP_LOCATION_NOT_SERVICEABLE",
+                        "Pickup location is not serviceable"));
+        Zone dropZone = zoneService.resolveServiceableZone(req.dropLat(), req.dropLng())
+                .orElseThrow(() -> ApiException.badRequest(
+                        "DROP_LOCATION_NOT_SERVICEABLE",
+                        "Drop location is not serviceable"));
+
         FareEstimateResponse estimate = estimateFare(req);
 
         DeliveryRequest trip = new DeliveryRequest();
         trip.setCustomerId(customerId);
         trip.setVehicleTypeId(vehicleType.getId());
         trip.setPickupAddress(req.pickupAddress());
+        trip.setPickupZoneId(pickupZone.getId());
         trip.setPickupLat(req.pickupLat());
         trip.setPickupLng(req.pickupLng());
         trip.setDropAddress(req.dropAddress());
+        trip.setDropZoneId(dropZone.getId());
         trip.setDropLat(req.dropLat());
         trip.setDropLng(req.dropLng());
         trip.setEstimatedDistanceKm(estimate.estimatedDistanceKm());

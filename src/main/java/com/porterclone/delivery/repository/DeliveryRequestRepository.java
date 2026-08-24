@@ -16,4 +16,6 @@ public interface DeliveryRequestRepository extends JpaRepository<DeliveryRequest
 
     /** Backs the timeout sweep — SEARCHING_RIDER trips nobody has accepted within the broadcast window. */
     List<DeliveryRequest> findByStatusAndRequestedAtBefore(TripStatus status, LocalDateTime cutoff);
+
+    long countByPickupZoneIdOrDropZoneId(Long pickupZoneId, Long dropZoneId);
 }

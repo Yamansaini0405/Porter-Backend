@@ -32,6 +32,9 @@ public class DeliveryRequest extends BaseEntity {
     @Column(name = "pickup_address", nullable = false, length = 500)
     private String pickupAddress;
 
+    @Column(name = "pickup_zone_id")
+    private Long pickupZoneId;
+
     @Column(name = "pickup_lat", nullable = false)
     private BigDecimal pickupLat;
 
@@ -40,6 +43,9 @@ public class DeliveryRequest extends BaseEntity {
 
     @Column(name = "drop_address", nullable = false, length = 500)
     private String dropAddress;
+
+    @Column(name = "drop_zone_id")
+    private Long dropZoneId;
 
     @Column(name = "drop_lat", nullable = false)
     private BigDecimal dropLat;

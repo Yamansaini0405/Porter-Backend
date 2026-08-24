@@ -57,6 +57,10 @@ public class DeliveryController {
         return ApiResponse.ok(deliveryService.cancel(tripId, cancelledBy, reason));
     }
 
+    @GetMapping("/{tripId}")
+    public ApiResponse<DeliveryRequest> get(@PathVariable Long tripId) {
+        return ApiResponse.ok(deliveryService.getDeliveryDetailsById(tripId));
+    }
     // ---- Rider flow ----
 
     /**
