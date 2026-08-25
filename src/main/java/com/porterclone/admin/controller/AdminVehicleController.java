@@ -19,4 +19,9 @@ public class AdminVehicleController {
     public ApiResponse<Vehicle> verify(@PathVariable Long vehicleId, @RequestParam boolean approved) {
         return ApiResponse.ok(vehicleService.verifyVehicle(vehicleId, approved));
     }
+
+    @GetMapping("vehicleType")
+    public ApiResponse<?> getVehicleTypes() {
+        return ApiResponse.ok(vehicleService.getAllVehicleTypes());
+    }
 }

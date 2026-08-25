@@ -132,8 +132,14 @@ public class DeliveryService {
                             BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(5)
                     ));
                     return new VehicleFareOption(
-                            vehicleType.getId(), vehicleType.getName(), vehicleType.getCapacityKg(),
-                            distanceKm, durationMin, breakdown.grossFare());
+                            vehicleType.getId(),
+                            vehicleType.getName(),
+                            vehicleType.getImageUrl(),
+                            vehicleType.getCapacityKg(),
+                            distanceKm,
+                            durationMin,
+                            breakdown.grossFare()
+                    );
                 })
                 .toList();
     }

@@ -96,4 +96,8 @@ public class VehicleService {
         }
         return vehicle;
     }
+
+    public List<VehicleType> getAllVehicleTypes() {
+        return vehicleTypeRepository.findAll();
+    }
 }

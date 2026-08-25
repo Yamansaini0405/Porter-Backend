@@ -35,6 +35,7 @@ public class DisputeController {
         return ApiResponse.ok(disputeRepository.findByStatus(DisputeStatus.OPEN));
     }
 
+
     @PostMapping("/admin/disputes/{disputeId}/resolve")
     public ApiResponse<Dispute> resolve(@PathVariable Long disputeId,
                                          @RequestParam String notes,

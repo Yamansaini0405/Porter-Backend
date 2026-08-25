@@ -22,6 +22,9 @@ public class VehicleType {
     @Column(nullable = false, unique = true, length = 50)
     private String name;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     @Column(name = "capacity_kg")
     private BigDecimal capacityKg;
 
