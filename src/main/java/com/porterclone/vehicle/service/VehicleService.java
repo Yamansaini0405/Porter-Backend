@@ -100,4 +100,33 @@ public class VehicleService {
     public List<VehicleType> getAllVehicleTypes() {
         return vehicleTypeRepository.findAll();
     }
+
+    public VehicleType getVehicleTypeById(Long vehicleTypeId) {
+        return vehicleTypeRepository.findById(vehicleTypeId)
+                .orElseThrow(() -> ApiException.notFound("VEHICLE_TYPE_NOT_FOUND", "Vehicle type not found"));
+    }
+
+    public VehicleType updateVehicleType(Long vehicleTypeId, VehicleType updatedVehicleType) {
+        VehicleType existingVehicleType = vehicleTypeRepository.findById(vehicleTypeId)
+                .orElseThrow(() -> ApiException.notFound("VEHICLE_TYPE_NOT_FOUND", "Vehicle type not found"));
+
+        existingVehicleType.setName(updatedVehicleType.getName());
+        existingVehicleType.setImageUrl(updatedVehicleType.getImageUrl());
+        existingVehicleType.setCapacityKg(updatedVehicleType.getCapacityKg());
+        existingVehicleType.setBaseFare(updatedVehicleType.getBaseFare());
+        existingVehicleType.setPerKmRate(updatedVehicleType.getPerKmRate());
+        existingVehicleType.setPerMinRate(updatedVehicleType.getPerMinRate());
+        existingVehicleType.setFreeWaitMinutes(updatedVehicleType.getFreeWaitMinutes());
+        existingVehicleType.setWaitChargePerMin(updatedVehicleType.getWaitChargePerMin());
+        existingVehicleType.setActive(updatedVehicleType.isActive());
+
+        return vehicleTypeRepository.save(existingVehicleType);
+    }
+
+    public void deleteVehicleType(Long vehicleTypeId) {
+        VehicleType vehicleType = vehicleTypeRepository.findById(vehicleTypeId)
+                .orElseThrow(() -> ApiException.notFound("VEHICLE_TYPE_NOT_FOUND", "Vehicle type not found"));
+        vehicleTypeRepository.delete(vehicleType);
+    }
+
 }

@@ -73,5 +73,5 @@ logging:
     # Request/response processing
     org.springframework.web: DEBUG
     # Database/Hibernate
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: INFO
     org.hibernate.orm.jdbc.bind: TRACE

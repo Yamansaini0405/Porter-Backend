@@ -102,7 +102,7 @@ public class AdminPricingController {
             @RequestParam(required = false) BigDecimal perMinRate,
             @RequestParam(required = false) Integer freeWaitMinutes,
             @RequestParam(required = false) BigDecimal waitChargePerMin,
-            @RequestPart(value = "image", required = false) MultipartFile image
+            @RequestParam(value = "image", required = false) MultipartFile image
     ) {
 
         VehicleType existing = vehicleTypeRepository.findById(id)

@@ -59,12 +59,10 @@ public class FileStorageService {
             String fileName =
                     UUID.randomUUID() + extension;
 
-            Path targetPath =
-                    VEHICLE_TYPE_UPLOAD_DIR.resolve(fileName).normalize();
+            Path absoluteTargetDir = VEHICLE_TYPE_UPLOAD_DIR.toAbsolutePath().normalize();
+            Path targetPath = absoluteTargetDir.resolve(fileName).normalize();
 
-            if (!targetPath.startsWith(
-                    VEHICLE_TYPE_UPLOAD_DIR.toAbsolutePath().normalize()
-            )) {
+            if (!targetPath.startsWith(absoluteTargetDir)) {
                 throw ApiException.badRequest(
                         "INVALID_FILE",
                         "Invalid file name"
