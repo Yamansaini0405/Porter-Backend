@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final String frontendOrigin;
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter,
-                          @Value("${app.cors.allowed-origin:http://localhost:5173}") String frontendOrigin) {
+                          @Value("${app.cors.allowed-origin:http://localhost:*}") String frontendOrigin) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.frontendOrigin = frontendOrigin;
     }
