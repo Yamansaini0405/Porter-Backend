@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface RiderDocumentRepository extends JpaRepository<RiderDocument, Long> {
     List<RiderDocument> findByRiderId(Long riderId);
+    List<RiderDocument> findByRiderIdOrderByCreatedAtDesc(Long riderId);
 }

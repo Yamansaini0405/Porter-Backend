@@ -2,6 +2,7 @@ package com.porterclone.rider.service;
 
 import com.porterclone.common.exception.ApiException;
 import com.porterclone.common.exception.InvalidStateTransitionException;
+import com.porterclone.rider.dto.RiderDetailsResponse;
 import com.porterclone.rider.entity.*;
 import com.porterclone.rider.repository.RiderDocumentRepository;
 import com.porterclone.rider.repository.RiderOnboardingHistoryRepository;
@@ -160,5 +161,11 @@ public class RiderOnboardingService {
     public Rider getRiderByUserId(Long userId) {
         return riderRepository.findByUserId(userId)
                 .orElseThrow(() -> ApiException.notFound("RIDER_NOT_FOUND", "Rider profile not found for user: " + userId));
+    }
+
+    public RiderDetailsResponse getRiderById(Long riderId) {
+        Rider rider = getRider(riderId);
+        List<RiderDocument> documents = riderDocumentRepository.findByRiderIdOrderByCreatedAtDesc(riderId);
+        return new RiderDetailsResponse(rider, documents);
     }
 }
