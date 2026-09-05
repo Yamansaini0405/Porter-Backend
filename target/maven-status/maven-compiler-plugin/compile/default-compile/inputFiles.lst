@@ -56,6 +56,7 @@ C:\Users\Yaman Saini\Documents\YAY Tech\porter-backend (1)\porter-backend\src\ma
 C:\Users\Yaman Saini\Documents\YAY Tech\porter-backend (1)\porter-backend\src\main\java\com\porterclone\rider\controller\RiderController.java
 C:\Users\Yaman Saini\Documents\YAY Tech\porter-backend (1)\porter-backend\src\main\java\com\porterclone\rider\dto\DocumentSubmitRequest.java
 C:\Users\Yaman Saini\Documents\YAY Tech\porter-backend (1)\porter-backend\src\main\java\com\porterclone\rider\dto\LocationPingRequest.java
+C:\Users\Yaman Saini\Documents\YAY Tech\porter-backend (1)\porter-backend\src\main\java\com\porterclone\rider\dto\RiderDetailsResponse.java
 C:\Users\Yaman Saini\Documents\YAY Tech\porter-backend (1)\porter-backend\src\main\java\com\porterclone\rider\entity\AvailabilityStatus.java
 C:\Users\Yaman Saini\Documents\YAY Tech\porter-backend (1)\porter-backend\src\main\java\com\porterclone\rider\entity\DocumentType.java
 C:\Users\Yaman Saini\Documents\YAY Tech\porter-backend (1)\porter-backend\src\main\java\com\porterclone\rider\entity\OnboardingStatus.java

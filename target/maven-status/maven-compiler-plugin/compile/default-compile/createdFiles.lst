@@ -72,6 +72,7 @@ com\porterclone\dispute\service\DisputeService.class
 com\porterclone\rider\entity\RiderOnboardingHistory.class
 com\porterclone\delivery\dto\VehicleFareOption.class
 com\porterclone\user\repository\UserRepository.class
+com\porterclone\rider\dto\RiderDetailsResponse.class
 com\porterclone\matching\service\RiderMatchingService$AssignmentOutcome.class
 com\porterclone\rider\entity\AvailabilityStatus.class
 com\porterclone\websocket\RequestBroadcastService$TripAssignedNotification.class

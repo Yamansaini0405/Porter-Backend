@@ -1,9 +1,10 @@
 package com.porterclone.rider.controller;
 
 import com.porterclone.common.ApiResponse;
+import com.porterclone.common.service.FileStorageService;
 import com.porterclone.matching.service.RiderLocationService;
-import com.porterclone.rider.dto.DocumentSubmitRequest;
 import com.porterclone.rider.dto.LocationPingRequest;
+import com.porterclone.rider.entity.DocumentType;
 import com.porterclone.rider.entity.Rider;
 import com.porterclone.rider.entity.RiderDocument;
 import com.porterclone.rider.service.RiderAvailabilityService;
@@ -12,8 +13,10 @@ import com.porterclone.security.UserPrincipal;
 import com.porterclone.vehicle.service.VehicleService;
 import com.porterclone.websocket.LocationBroadcastService;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Rider-app-facing endpoints. For self lookup we resolve rider profile from authenticated userId. */
 @RestController
@@ -25,23 +28,34 @@ public class RiderController {
     private final RiderLocationService locationService;
     private final LocationBroadcastService broadcastService;
     private final VehicleService vehicleService;
+    private final FileStorageService fileStorageService;
 
     public RiderController(RiderOnboardingService onboardingService,
-                            RiderAvailabilityService availabilityService,
-                            RiderLocationService locationService,
-                            LocationBroadcastService broadcastService,
-                            VehicleService vehicleService) {
+                           RiderAvailabilityService availabilityService,
+                           RiderLocationService locationService,
+                           LocationBroadcastService broadcastService,
+                           VehicleService vehicleService,
+                           FileStorageService fileStorageService) {
         this.onboardingService = onboardingService;
         this.availabilityService = availabilityService;
         this.locationService = locationService;
         this.broadcastService = broadcastService;
         this.vehicleService = vehicleService;
+        this.fileStorageService = fileStorageService;
     }
 
-    @PostMapping("/{riderId}/documents")
+    /**
+     * Rider uploads a KYC document (license, RC, Aadhar, PAN, insurance, photo) as a file.
+     *
+     * Content-Type: multipart/form-data
+     * Form fields: docType (text), file (binary)
+     */
+    @PostMapping(value = "/{riderId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<RiderDocument> submitDocument(@PathVariable Long riderId,
-                                                       @Valid @RequestBody DocumentSubmitRequest request) {
-        return ApiResponse.ok(onboardingService.submitDocument(riderId, request.docType(), request.fileUrl()));
+                                                     @RequestParam("docType") DocumentType docType,
+                                                     @RequestPart("file") MultipartFile file) {
+        String fileUrl = fileStorageService.storeRiderDocument(riderId, file);
+        return ApiResponse.ok(onboardingService.submitDocument(riderId, docType, fileUrl));
     }
 
     @PostMapping("/{riderId}/submit-for-review")
@@ -80,7 +94,7 @@ public class RiderController {
      *  Vehicle type is resolved server-side from the rider's selected active vehicle — see LocationPingRequest. */
     @PostMapping("/{riderId}/location")
     public ApiResponse<Void> updateLocation(@PathVariable Long riderId,
-                                             @Valid @RequestBody LocationPingRequest request) {
+                                            @Valid @RequestBody LocationPingRequest request) {
         locationService.updateLocation(riderId, request.lat(), request.lng());
 
         if (request.activeTripId() != null) {
