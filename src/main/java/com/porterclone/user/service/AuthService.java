@@ -8,8 +8,9 @@ import com.porterclone.rider.entity.Rider;
 import com.porterclone.rider.repository.RiderRepository;
 import com.porterclone.security.JwtService;
 import com.porterclone.user.dto.AuthResponse;
+import com.porterclone.user.dto.CompleteProfileRequest;
 import com.porterclone.user.dto.CustomerSummaryResponse;
-import com.porterclone.user.dto.RegisterRequest;
+import com.porterclone.user.dto.OtpVerifyResponse;
 import com.porterclone.user.dto.RiderSummaryResponse;
 import com.porterclone.user.dto.SetPasswordRequest;
 import com.porterclone.user.dto.UserSummaryResponse;
@@ -26,7 +27,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Optional;
 
+/**
+ * Uber-style phone-first auth:
+ *
+ *   Phone -> sendOtp() -> Redis
+ *   Verify OTP -> verifyOtp()
+ *       existing user -> JWT (AuthResponse)                -> Home
+ *       new user      -> registration token                -> "Enter Name" screen
+ *                          -> POST /profile -> completeProfile() -> creates User + Customer/Rider -> JWT -> Home
+ */
 @Service
 public class AuthService {
 
@@ -57,23 +68,65 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Step 1: send an OTP to a phone number, whether or not it's registered yet
+     * (Uber/porter-style — we never leak "does this number exist" at this stage).
+     */
+    public void sendOtp(String phone) {
+        otpService.sendOtp(phone);
+    }
+
+    /**
+     * Step 2: verify the OTP. Branches on whether the phone is already a known user.
+     */
     @Transactional
-    public void register(RegisterRequest request) {
+    public OtpVerifyResponse verifyOtp(String phone, String otp) {
+        if (!otpService.verifyOtp(phone, otp)) {
+            throw ApiException.badRequest("INVALID_OTP", "The OTP you entered is incorrect");
+        }
+
+        Optional<User> existing = userRepository.findByPhone(phone);
+
+        if (existing.isEmpty()) {
+            // Brand-new phone number: no account yet. Hand back a short-lived registration
+            // token instead of a full JWT — it's only good for POST /profile.
+            String registrationToken = jwtService.generateRegistrationToken(phone);
+            return OtpVerifyResponse.newUser(registrationToken);
+        }
+
+        User user = existing.get();
+        if (user.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw ApiException.forbidden("ACCOUNT_NOT_ACTIVE", "Your account is " + user.getAccountStatus());
+        }
+
+        user.setPhoneVerified(true);
+        userRepository.save(user);
+
+        return OtpVerifyResponse.existingUser(issueTokens(user));
+    }
+
+    /**
+     * Step 3 (new users only): called with the registration token's phone (extracted from the
+     * token by the controller, never trusted from the request body) plus the name/role the user
+     * just entered. Creates the User row and the matching Customer/Rider row, then logs them in.
+     */
+    @Transactional
+    public AuthResponse completeProfile(String phone, CompleteProfileRequest request) {
         if (request.role() == Role.ADMIN || request.role() == Role.SUPPORT) {
             throw ApiException.forbidden("SELF_REGISTRATION_NOT_ALLOWED", "This role cannot self-register");
         }
-        if (userRepository.existsByPhone(request.phone())) {
+        if (userRepository.existsByPhone(phone)) {
+            // Registration token was reused after the account was already created — e.g. a
+            // duplicate/replayed request. Fail closed rather than creating a duplicate account.
             throw ApiException.conflict("PHONE_ALREADY_REGISTERED", "An account with this phone number already exists");
         }
 
         User user = new User();
-        user.setPhone(request.phone());
+        user.setPhone(phone);
         user.setEmail(request.email());
         user.setRole(request.role());
         user.setAccountStatus(AccountStatus.ACTIVE);
-        if (request.password() != null && !request.password().isBlank()) {
-            user.setPasswordHash(passwordEncoder.encode(request.password()));
-        }
+        user.setPhoneVerified(true); // already proven via OTP in step 2
         user = userRepository.save(user);
 
         if (request.role() == Role.CUSTOMER) {
@@ -88,32 +141,6 @@ public class AuthService {
             rider.setOnboardingStatus(OnboardingStatus.REGISTERED); // rider is NOT active/available yet
             riderRepository.save(rider);
         }
-
-        otpService.sendOtp(request.phone());
-    }
-
-    public void requestLoginOtp(String phone) {
-        if (!userRepository.existsByPhone(phone)) {
-            throw ApiException.notFound("USER_NOT_FOUND", "No account found with this phone number");
-        }
-        otpService.sendOtp(phone);
-    }
-
-    @Transactional
-    public AuthResponse verifyOtpAndLogin(String phone, String otp) {
-        if (!otpService.verifyOtp(phone, otp)) {
-            throw ApiException.badRequest("INVALID_OTP", "The OTP you entered is incorrect");
-        }
-
-        User user = userRepository.findByPhone(phone)
-                .orElseThrow(() -> ApiException.notFound("USER_NOT_FOUND", "No account found with this phone number"));
-
-        if (user.getAccountStatus() != AccountStatus.ACTIVE) {
-            throw ApiException.forbidden("ACCOUNT_NOT_ACTIVE", "Your account is " + user.getAccountStatus());
-        }
-
-        user.setPhoneVerified(true);
-        userRepository.save(user);
 
         return issueTokens(user);
     }

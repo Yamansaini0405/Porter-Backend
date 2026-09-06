@@ -44,6 +44,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Must be authenticated even though it lives under /api/v1/auth/**
                         .requestMatchers("/api/v1/auth/password/set").authenticated()
+                        // Only a short-lived registration token (role=PENDING, issued by
+                        // /otp/verify for a brand-new phone number) may complete a profile.
+                        .requestMatchers("/api/v1/auth/profile").hasRole("PENDING")
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/vehicle-types",

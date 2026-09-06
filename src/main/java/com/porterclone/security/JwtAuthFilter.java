@@ -25,16 +25,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                     @NonNull HttpServletResponse response,
-                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             if (jwtService.isTokenValid(token)) {
-                Long userId = jwtService.extractUserId(token);
+                String type = jwtService.extractType(token);
                 String role = jwtService.extractRole(token);
-                UserPrincipal principal = new UserPrincipal(userId, role);
+
+                Long userId = null;
+                String phone = null;
+                if (JwtService.TYPE_REGISTRATION.equals(type)) {
+                    // Not a real account yet — only the phone is known. Grants ROLE_PENDING only,
+                    // which SecurityConfig restricts to POST /api/v1/auth/profile.
+                    phone = jwtService.extractPhone(token);
+                } else {
+                    userId = jwtService.extractUserId(token);
+                }
+
+                UserPrincipal principal = new UserPrincipal(userId, role, phone);
 
                 var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
                 var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
